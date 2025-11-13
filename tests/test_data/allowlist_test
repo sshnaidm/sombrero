@@ -1,0 +1,6 @@
+# Test allowlist file
+test_password_123
+admin@company.com
+regex:^AKIA.*
+regex:^ghp_.*
+regex:^10\.0\..*

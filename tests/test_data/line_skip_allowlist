@@ -1,0 +1,3 @@
+# Line skip allowlist
+line_skip:"kind":"Event"
+line_skip:[DEBUG]

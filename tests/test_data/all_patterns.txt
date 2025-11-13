@@ -1,0 +1,101 @@
+# Comprehensive test file covering all pattern types
+
+# 1. Password patterns
+password = "test_password_123"
+passwd: secretpass456
+pwd = "mypass789"
+
+# 2. Database passwords
+db_password = "dbsecret123"
+database_password: dbpass456
+
+# 3. AWS Access Keys
+AKIAIOSFODNN7EXAMPLE
+ASIA1234567890ABCDEF
+aws_access_key_id = AKIA0123456789ABCDEF
+
+# 4. GitHub Tokens
+ghp_1234567890abcdefghijklmnopqrstuvwxyz
+gho_abcdefghijklmnopqrstuvwxyz123456789
+ghu_1234567890abcdefghijklmnopqrstuvwxyz
+
+# 5. Slack Tokens
+xoxb-1234567890123-1234567890123-abcdefghijklmnopqrstuvwx
+xoxp-1234567890123-1234567890123-abcdefghijklmnopqrstuvwx
+
+# 6. Generic API Keys
+api_key = "sk_test_1234567890abcdefghij"
+apikey: "live_key_abcdefghijklmnop"
+
+# 7. JWT Tokens
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+# 8. Bearer Tokens
+Authorization: Bearer abcdef1234567890abcdef1234567890abcd
+bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test
+
+# 9. SSH Private Keys
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA1234567890
+-----END RSA PRIVATE KEY-----
+
+-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEF
+-----END PRIVATE KEY-----
+
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmU
+-----END OPENSSH PRIVATE KEY-----
+
+# 10. Database Connection Strings
+postgresql://user:password123@localhost:5432/mydb
+mysql://admin:dbpass456@127.0.0.1:3306/testdb
+mongodb://dbuser:mongopass789@10.0.0.5:27017/database
+redis://user:redispass@192.168.1.100:6379
+jdbc:postgresql://localhost:5432/db?user=admin&password=secret123
+
+# 11. Internal IP Addresses - 10.x.x.x
+Server: 10.0.0.1
+Database: 10.255.255.254
+Internal: 10.123.45.67
+
+# 12. Internal IP Addresses - 192.168.x.x
+Gateway: 192.168.0.1
+Router: 192.168.1.1
+Device: 192.168.255.255
+
+# 13. Internal IP Addresses - 172.16-31.x.x
+Network: 172.16.0.1
+Host: 172.31.255.255
+Container: 172.20.10.5
+
+# 14. Usernames
+username: admin_user
+user = superuser
+login: test_user
+
+# 15. Email Addresses
+admin@company.com
+user.name@example.org
+test+tag@domain.co.uk
+
+# 16. Secret Keys
+secret_key = "sk_live_1234567890abcdefghijklmnopqr"
+secretkey: abcdefghijklmnopqrstuvwxyz123456
+
+# 17. Private Keys
+private_key: "priv_key_abcdefghijklmnopqrstuvwxyz1234567890"
+privatekey = "pk_test_1234567890abcdefghijklmnop"
+
+# 18. Access Tokens
+access_token = "at_1234567890abcdefghijklmnopqrstuvwxyz"
+accesstoken: "token_abcdefghijklmnopqrstuvwxyz1234567890"
+
+# 19. High-entropy Base64 (requires --enable-entropy)
+dGhpc2lzYXZlcnlsb25nc2VjcmV0c3RyaW5nd2l0aGhpZ2hlbnRyb3B5MTIzNDU2Nzg5MA==
+
+# 20. High-entropy Hex (requires --enable-entropy)
+1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f
+
+# 21. Raw API key format (requires --enable-entropy)
+abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOP

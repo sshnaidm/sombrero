@@ -1,0 +1,4 @@
+password = "mysecret123"
+api_key = "sk_test_abcdefg12345"
+username: admin_user
+access_token = "token_xyz789abc456"

@@ -1,0 +1,80 @@
+# Security Scanner Allowlist
+# Lines starting with # are comments
+# Empty lines are ignored
+#
+# Format:
+#   - Exact match: just write the exact string to exclude
+#   - Regex pattern: prefix with 'regex:' followed by a regex pattern
+#
+# Examples:
+
+# Exact email match - official company email
+noreply@example.com
+
+# Regex pattern - exclude all emails from official domain
+regex:.*@official-company\.com
+
+# Kube related
+regex:.*olm.webhook-description-hash.*
+regex:.*kind.:.Event.*
+regex:.*user="system.*
+regex:.*olm.pod-spec-hash.*
+regex:.*\${.*PASSWORD}.*
+
+# Regex pattern - exclude test/example passwords
+regex:(?i)test_?password.*
+regex:(?i)example_?pass.*
+
+# Specific test API keys
+test_api_key_12345
+
+# Github
+regex:.*/commits/.*
+
+# Public/example IPs that are safe
+8.8.8.8
+1.1.1.1
+
+# IPs
+regex:10.0.*
+regex:10.128.*
+regex:10.129.*
+regex:10.130.*
+regex:10.131.*
+regex:172.30.*
+regex:192.168.*
+
+# Test usernames
+test_user
+example_user
+# Official Red Hat email - CNF QE team
+cnf-qe@redhat.com
+# Allowlist for Kubernetes Audit Logs
+# These patterns match Kubernetes service account tokens and resource identifiers
+# that appear in audit logs but are not actual secrets.
+
+# Service account tokens (format: 0-<base62>)
+# Example: 0-bybvX7ylfudwXvBJJtG8wzig174nRkdcY3miA7
+regex:^0-[A-Za-z0-9]{38,42}$
+
+# RBAC role binding tokens (format: rolename-<base62>)
+# Examples: admin-cJW3ICOZ9Osn3oPCTb13AVfBqppCRcP8pbQVFI
+#           view-8emcFsHayyHMQwkcnb9OTLvkbp0RUOKtlNrGsV
+#           edit-bVVJnBj37eRvbI1svBxms0t0mdsKB26cTBQYrx
+regex:^(admin|edit|view)-[A-Za-z0-9]{38,42}$
+
+# Kubernetes operator service account tokens
+# Example: kubernetes-nmstate-opera-ase22sVoNXNzBPApmx92rtKoqtHakXkndVNpxB
+regex:^[a-z0-9-]+-[A-Za-z0-9]{38,42}$
+
+# Container registry references with SHA256
+# Example: registry-ci-openshift-org-ocp-4-20-2025-10-21-024351-sha256-496b083e8798bb125c654c69e0d68e9b203fa9f577969e6f44fb13c7deb9ccef
+regex:^registry-.*-sha256-[a-f0-9]{64}$
+
+# Base64 encoded Kubernetes metadata (continuation tokens, etc.)
+# Example: eyJ2IjoibWV0YS5rOHMuaW8vdjEiLCJydiI6MjMwMDIsInN0YXJ0IjoiL29wZW5zaGlmdC1yb3V0ZS1jb250cm9sbGVyLW1hbmFnZXIvb3BlbnNoaWZ0LXNlcnZpY2UtY2EuY3J0XHUwMDAwIn0
+# These are Kubernetes API continuation tokens, not secrets
+regex:^eyJ2IjoibWV0YS5rOHMuaW8vdjEi.*
+
+# Kubernetes audit log patterns - skip entire lines containing Event
+line_skip:"kind":"Event"

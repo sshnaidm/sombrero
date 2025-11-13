@@ -1,0 +1,5 @@
+{"kind":"Event","user":"admin","password":"should_be_skipped_123"}
+Normal line with password = "should_be_found_456"
+[DEBUG] Test log with password: should_be_skipped_789
+[INFO] Information log password: should_be_found_012
+ConfigMap data password = "should_be_found_345"
