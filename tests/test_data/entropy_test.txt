@@ -1,0 +1,13 @@
+# High-entropy strings for entropy detection testing
+
+# Base64 encoded secrets (40+ chars)
+base64_secret_1: dGhpc2lzYXZlcnlsb25nc2VjcmV0c3RyaW5nd2l0aGhpZ2hlbnRyb3B5MTIzNDU2Nzg5MA==
+base64_secret_2: YW5vdGhlcmxvbmdzZWNyZXR3aXRoaGlnaGVudHJvcHl0aGF0c2hvdWxkYmVkZXRlY3RlZA==
+
+# Hex strings (32+ chars)
+hex_secret_1: 1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b
+hex_secret_2: abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
+
+# Raw API key format (32+ chars)
+raw_key_1: sk_live_abcdefghijklmnopqrstuvwxyz1234567890
+raw_key_2: pk_test_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ

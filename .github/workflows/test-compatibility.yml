@@ -1,0 +1,309 @@
+name: Test Python-Go Compatibility
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compare-implementations:
+    name: Compare Python and Go Outputs
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+
+    - name: Initialize Go module and build binary
+      run: |
+        if [ ! -f go.mod ]; then
+          go mod init secscript
+        fi
+        cd go
+        go build -o ../secscript-go
+        cd ..
+        chmod +x secscript-go
+
+    - name: Make test scripts executable
+      run: chmod +x tests/*.sh
+
+    - name: Run comparison tests
+      run: |
+        set -e  # Exit on error
+
+        echo "================================================"
+        echo "Comparing Python and Go Implementations"
+        echo "================================================"
+        echo ""
+
+        # Use test_data directory to avoid default allowlist
+        cd tests/test_data
+
+        # Test 1: Pattern detection comparison
+        echo "Test 1: Comparing pattern detection outputs..."
+        echo "  Running Python..."
+        set +e  # Allow capturing exit code
+        PYTHON_OUT=$(python3 ../../secscript.py all_patterns.txt --dry-run 2>&1)
+        PYTHON_EXIT=$?
+        set -e
+
+        echo "  Running Go..."
+        set +e  # Allow capturing exit code
+        GO_OUT=$(../../secscript-go --dry-run all_patterns.txt 2>&1)
+        GO_EXIT=$?
+        set -e
+
+        echo "  Python exit code: $PYTHON_EXIT"
+        echo "  Go exit code: $GO_EXIT"
+
+        # Extract counts
+        PYTHON_COUNT=$(echo "$PYTHON_OUT" | grep "Total findings:" | grep -o '[0-9]\+ across' | grep -o '[0-9]\+' || echo "")
+        GO_COUNT=$(echo "$GO_OUT" | grep "Total findings:" | grep -o '[0-9]\+ across' | grep -o '[0-9]\+' || echo "")
+
+        echo "  Python found: ${PYTHON_COUNT:-ERROR} secrets"
+        echo "  Go found: ${GO_COUNT:-ERROR} secrets"
+
+        # Check if counts were extracted successfully
+        if [ -z "$PYTHON_COUNT" ]; then
+          echo "  ✗ FAIL: Could not extract Python count"
+          echo ""
+          echo "===== PYTHON OUTPUT ====="
+          echo "$PYTHON_OUT"
+          echo "========================="
+          exit 1
+        fi
+
+        if [ -z "$GO_COUNT" ]; then
+          echo "  ✗ FAIL: Could not extract Go count"
+          echo ""
+          echo "===== GO OUTPUT ====="
+          echo "$GO_OUT"
+          echo "====================="
+          exit 1
+        fi
+
+        if [ "$PYTHON_COUNT" = "$GO_COUNT" ]; then
+          echo "  ✓ PASS: Same number of findings ($PYTHON_COUNT)"
+        else
+          echo "  ✗ FAIL: Different number of findings"
+          echo ""
+          echo "===== PYTHON OUTPUT (last 20 lines) ====="
+          echo "$PYTHON_OUT" | tail -20
+          echo "=========================================="
+          echo ""
+          echo "===== GO OUTPUT (last 20 lines) ====="
+          echo "$GO_OUT" | tail -20
+          echo "======================================"
+          echo ""
+          echo "===== PATTERN TYPE COMPARISON ====="
+          echo "Python patterns detected:"
+          echo "$PYTHON_OUT" | grep -oP '\[\K[^\]]+' | sort | uniq -c || echo "None"
+          echo ""
+          echo "Go patterns detected:"
+          echo "$GO_OUT" | grep -oP '\[\K[^\]]+' | sort | uniq -c || echo "None"
+          echo "===================================="
+          exit 1
+        fi
+        echo ""
+
+        # Test 2: Allowlist behavior comparison
+        echo "Test 2: Comparing allowlist behavior..."
+        echo "  Running Python with allowlist..."
+        set +e
+        PYTHON_ALLOW=$(python3 ../../secscript.py all_patterns.txt --dry-run --allowlist allowlist_test 2>&1)
+        set -e
+        echo "  Running Go with allowlist..."
+        set +e
+        GO_ALLOW=$(../../secscript-go --dry-run --allowlist allowlist_test all_patterns.txt 2>&1)
+        set -e
+
+        PYTHON_ALLOW_COUNT=$(echo "$PYTHON_ALLOW" | grep "Total findings:" | grep -o '[0-9]\+ across' | grep -o '[0-9]\+' || echo "")
+        GO_ALLOW_COUNT=$(echo "$GO_ALLOW" | grep "Total findings:" | grep -o '[0-9]\+ across' | grep -o '[0-9]\+' || echo "")
+
+        echo "  Python found (with allowlist): ${PYTHON_ALLOW_COUNT:-ERROR} secrets"
+        echo "  Go found (with allowlist): ${GO_ALLOW_COUNT:-ERROR} secrets"
+
+        # Check if counts were extracted successfully
+        if [ -z "$PYTHON_ALLOW_COUNT" ]; then
+          echo "  ✗ FAIL: Could not extract Python allowlist count"
+          echo ""
+          echo "===== PYTHON ALLOWLIST OUTPUT ====="
+          echo "$PYTHON_ALLOW"
+          echo "==================================="
+          exit 1
+        fi
+
+        if [ -z "$GO_ALLOW_COUNT" ]; then
+          echo "  ✗ FAIL: Could not extract Go allowlist count"
+          echo ""
+          echo "===== GO ALLOWLIST OUTPUT ====="
+          echo "$GO_ALLOW"
+          echo "==============================="
+          exit 1
+        fi
+
+        if [ "$PYTHON_ALLOW_COUNT" = "$GO_ALLOW_COUNT" ]; then
+          echo "  ✓ PASS: Same allowlist behavior ($PYTHON_ALLOW_COUNT secrets)"
+        else
+          echo "  ✗ FAIL: Different allowlist behavior"
+          echo ""
+          echo "===== PYTHON ALLOWLIST OUTPUT (last 15 lines) ====="
+          echo "$PYTHON_ALLOW" | tail -15
+          echo "===================================================="
+          echo ""
+          echo "===== GO ALLOWLIST OUTPUT (last 15 lines) ====="
+          echo "$GO_ALLOW" | tail -15
+          echo "==============================================="
+          exit 1
+        fi
+        echo ""
+
+        # Test 3: Line skip comparison
+        echo "Test 3: Comparing line skip behavior..."
+        echo "  Running Python with line skip..."
+        set +e
+        PYTHON_SKIP=$(python3 ../../secscript.py line_skip_test.txt --dry-run --allowlist line_skip_allowlist 2>&1)
+        set -e
+        echo "  Running Go with line skip..."
+        set +e
+        GO_SKIP=$(../../secscript-go --dry-run --allowlist line_skip_allowlist line_skip_test.txt 2>&1)
+        set -e
+
+        PYTHON_SKIP_COUNT=$(echo "$PYTHON_SKIP" | grep "Total findings:" | grep -o '[0-9]\+ across' | grep -o '[0-9]\+' || echo "")
+        GO_SKIP_COUNT=$(echo "$GO_SKIP" | grep "Total findings:" | grep -o '[0-9]\+ across' | grep -o '[0-9]\+' || echo "")
+
+        echo "  Python found (with line skip): ${PYTHON_SKIP_COUNT:-ERROR} secrets"
+        echo "  Go found (with line skip): ${GO_SKIP_COUNT:-ERROR} secrets"
+
+        # Check if counts were extracted successfully
+        if [ -z "$PYTHON_SKIP_COUNT" ]; then
+          echo "  ✗ FAIL: Could not extract Python line skip count"
+          echo ""
+          echo "===== PYTHON LINE SKIP OUTPUT ====="
+          echo "$PYTHON_SKIP"
+          echo "==================================="
+          exit 1
+        fi
+
+        if [ -z "$GO_SKIP_COUNT" ]; then
+          echo "  ✗ FAIL: Could not extract Go line skip count"
+          echo ""
+          echo "===== GO LINE SKIP OUTPUT ====="
+          echo "$GO_SKIP"
+          echo "==============================="
+          exit 1
+        fi
+
+        if [ "$PYTHON_SKIP_COUNT" = "$GO_SKIP_COUNT" ]; then
+          echo "  ✓ PASS: Same line skip behavior ($PYTHON_SKIP_COUNT secrets)"
+        else
+          echo "  ✗ FAIL: Different line skip behavior"
+          echo ""
+          echo "===== PYTHON LINE SKIP OUTPUT (last 15 lines) ====="
+          echo "$PYTHON_SKIP" | tail -15
+          echo "===================================================="
+          echo ""
+          echo "===== GO LINE SKIP OUTPUT (last 15 lines) ====="
+          echo "$GO_SKIP" | tail -15
+          echo "==============================================="
+          exit 1
+        fi
+        echo ""
+
+        # Test 4: Entropy detection comparison
+        echo "Test 4: Comparing entropy detection..."
+        echo "  Running Python with entropy detection..."
+        set +e
+        PYTHON_ENTROPY=$(python3 ../../secscript.py entropy_test.txt --dry-run --enable-entropy 2>&1)
+        set -e
+        echo "  Running Go with entropy detection..."
+        set +e
+        GO_ENTROPY=$(../../secscript-go --dry-run --enable-entropy entropy_test.txt 2>&1)
+        set -e
+
+        PYTHON_ENTROPY_COUNT=$(echo "$PYTHON_ENTROPY" | grep "Total findings:" | grep -o '[0-9]\+ across' | grep -o '[0-9]\+' || echo "")
+        GO_ENTROPY_COUNT=$(echo "$GO_ENTROPY" | grep "Total findings:" | grep -o '[0-9]\+ across' | grep -o '[0-9]\+' || echo "")
+
+        echo "  Python found (with entropy): ${PYTHON_ENTROPY_COUNT:-ERROR} secrets"
+        echo "  Go found (with entropy): ${GO_ENTROPY_COUNT:-ERROR} secrets"
+
+        # Check if counts were extracted successfully
+        if [ -z "$PYTHON_ENTROPY_COUNT" ]; then
+          echo "  ✗ FAIL: Could not extract Python entropy count"
+          echo ""
+          echo "===== PYTHON ENTROPY OUTPUT ====="
+          echo "$PYTHON_ENTROPY"
+          echo "================================="
+          exit 1
+        fi
+
+        if [ -z "$GO_ENTROPY_COUNT" ]; then
+          echo "  ✗ FAIL: Could not extract Go entropy count"
+          echo ""
+          echo "===== GO ENTROPY OUTPUT ====="
+          echo "$GO_ENTROPY"
+          echo "============================="
+          exit 1
+        fi
+
+        if [ "$PYTHON_ENTROPY_COUNT" = "$GO_ENTROPY_COUNT" ]; then
+          echo "  ✓ PASS: Same entropy detection behavior ($PYTHON_ENTROPY_COUNT secrets)"
+        else
+          echo "  ✗ FAIL: Different entropy detection behavior"
+          echo ""
+          echo "===== PYTHON ENTROPY OUTPUT (last 15 lines) ====="
+          echo "$PYTHON_ENTROPY" | tail -15
+          echo "=================================================="
+          echo ""
+          echo "===== GO ENTROPY OUTPUT (last 15 lines) ====="
+          echo "$GO_ENTROPY" | tail -15
+          echo "=============================================="
+          exit 1
+        fi
+        echo ""
+
+        # Test 5: Clean file comparison
+        echo "Test 5: Comparing clean file handling..."
+        echo "  Running Python on clean file..."
+        set +e
+        PYTHON_CLEAN_OUT=$(python3 ../../secscript.py clean_file.txt --dry-run 2>&1)
+        PYTHON_EXIT=$?
+        echo "  Running Go on clean file..."
+        GO_CLEAN_OUT=$(../../secscript-go --dry-run clean_file.txt 2>&1)
+        GO_EXIT=$?
+        set -e
+
+        echo "  Python exit code: $PYTHON_EXIT"
+        echo "  Go exit code: $GO_EXIT"
+
+        if [ "$PYTHON_EXIT" = "$GO_EXIT" ] && [ "$PYTHON_EXIT" = "0" ]; then
+          echo "  ✓ PASS: Both return exit code 0 for clean file"
+        else
+          echo "  ✗ FAIL: Different exit codes for clean file"
+          echo ""
+          echo "===== PYTHON CLEAN FILE OUTPUT ====="
+          echo "$PYTHON_CLEAN_OUT"
+          echo "===================================="
+          echo ""
+          echo "===== GO CLEAN FILE OUTPUT ====="
+          echo "$GO_CLEAN_OUT"
+          echo "================================"
+          exit 1
+        fi
+        echo ""
+
+        echo "================================================"
+        echo "✓ All compatibility tests passed!"
+        echo "Python and Go implementations are compatible"
+        echo "================================================"

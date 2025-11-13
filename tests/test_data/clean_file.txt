@@ -1,0 +1,6 @@
+This is a clean file.
+No secrets here.
+Just plain text content.
+Some numbers: 1234567890
+Some words: hello world
+Public domain: example.com
